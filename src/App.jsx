@@ -11,8 +11,9 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 const LoginOverlay = ({ onLogin, onCancel }) => {
   const [passwordInput, setPasswordInput] = useState('');
   
-  const handleLogin = () => {
-    if (passwordInput === 'admin123') {
+  const handleLogin = async () => {
+    const correctPassword = await db.getPassword();
+    if (passwordInput === correctPassword) {
       onLogin();
     } else {
       alert('Password salah!');
@@ -47,6 +48,24 @@ const Dashboard = ({ isAuthenticated, setIsAuthenticated }) => {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  
+  // State untuk Ganti Password
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [changingPass, setChangingPass] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!newPassword.trim()) {
+      alert('Password tidak boleh kosong!');
+      return;
+    }
+    setChangingPass(true);
+    await db.updatePassword(newPassword);
+    setChangingPass(false);
+    alert('Password berhasil diubah!');
+    setShowPasswordModal(false);
+    setNewPassword('');
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -81,11 +100,16 @@ const Dashboard = ({ isAuthenticated, setIsAuthenticated }) => {
         <p>Kelola semua turnamen Anda</p>
       </div>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h2>Daftar Turnamen</h2>
-        <button className="btn-primary" onClick={() => navigate('/setup')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Plus size={18} /> Buat Turnamen Baru
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="btn-secondary" onClick={() => setShowPasswordModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Settings size={18} /> Ganti Password Admin
+          </button>
+          <button className="btn-primary" onClick={() => navigate('/setup')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Plus size={18} /> Buat Turnamen Baru
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -113,6 +137,31 @@ const Dashboard = ({ isAuthenticated, setIsAuthenticated }) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* MODAL GANTI PASSWORD */}
+      {showPasswordModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)' }}>
+          <div className="glass-panel" style={{ padding: '2rem', width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <h3 style={{ margin: 0, textAlign: 'center', color: 'var(--accent-primary)' }}>Ganti Password Admin</h3>
+            <p style={{ margin: 0, textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Masukkan password baru yang Anda inginkan</p>
+            <input 
+              type="text" 
+              className="input-field" 
+              placeholder="Password baru..."
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleChangePassword()}
+              autoFocus
+            />
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowPasswordModal(false)}>Batal</button>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={handleChangePassword} disabled={changingPass}>
+                {changingPass ? 'Menyimpan...' : 'Simpan'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

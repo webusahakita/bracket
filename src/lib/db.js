@@ -70,5 +70,33 @@ export const db = {
     const local = getLocalDB();
     saveLocalDB(local.filter(t => t.id !== id));
     return true;
+  },
+
+  async getPassword() {
+    try {
+      const res = await fetch('/api/settings');
+      if (res.ok) {
+        const data = await res.json();
+        return data.password;
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return localStorage.getItem('admin_password') || 'admin123';
+  },
+
+  async updatePassword(newPassword) {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword }),
+      });
+      if (res.ok) return true;
+    } catch (e) {
+      // Fallback
+    }
+    localStorage.setItem('admin_password', newPassword);
+    return true;
   }
 };
