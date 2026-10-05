@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
-import { Trophy, Users, Edit2, Play, Settings, Plus, ArrowLeft, Share2, Save } from 'lucide-react';
+import { Trophy, Users, Edit2, Play, Settings, Plus, ArrowLeft, Share2, Save, Download } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import { db } from './lib/db';
 import './App.css';
 
@@ -449,6 +450,33 @@ const TournamentView = ({ isAdminView }) => {
     handleSave(newBracket);
   };
 
+  const exportToImage = async () => {
+    const element = document.querySelector('.bracket-container');
+    if (!element) return;
+    
+    // Simpan gaya aslinya
+    const originalTransform = element.style.transform;
+    element.style.transform = 'none'; // Pastikan tidak ada scale/zoom yang memotong gambar
+    
+    try {
+      const canvas = await html2canvas(element, {
+        backgroundColor: '#0a0a0f', // Sama dengan var(--bg-primary)
+        scale: 2 // Kualitas lebih tinggi
+      });
+      
+      const link = document.createElement('a');
+      link.download = `bracket-${tournament.name.replace(/[^a-zA-Z0-9]/g, '-')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (e) {
+      alert('Gagal mengekspor gambar');
+      console.error(e);
+    } finally {
+      element.style.transform = originalTransform;
+    }
+  };
+
+
   if (loading) return <div className="app-container" style={{ textAlign: 'center', marginTop: '5rem' }}>Memuat data turnamen...</div>;
   if (!tournament) return <div className="app-container" style={{ textAlign: 'center', marginTop: '5rem' }}>Turnamen tidak ditemukan!</div>;
 
@@ -488,13 +516,21 @@ const TournamentView = ({ isAdminView }) => {
                 <Edit2 size={18} /> Edit Turnamen
               </button>
               <button className="btn-secondary" onClick={() => { navigator.clipboard.writeText(publicLink); alert('Link publik berhasil disalin!'); }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Share2 size={18} /> Salin Link Publik
+                <Share2 size={18} /> Salin Link
+              </button>
+              <button className="btn-primary" onClick={exportToImage} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Download size={18} /> Export Gambar
               </button>
             </>
           )}
           {!isAdminView && (
-            <div style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
-              Mode Publik (Hanya Lihat)
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <div style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
+                Mode Publik (Hanya Lihat)
+              </div>
+              <button className="btn-primary" onClick={exportToImage} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Download size={18} /> Export Gambar
+              </button>
             </div>
           )}
         </div>
